@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Slice</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%E2%9C%82%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Archivo+Black&family=Bebas+Neue&family=Playfair+Display:wght@700&family=DM+Serif+Display&family=Space+Mono:wght@700&display=swap">
+<!-- p5.js pinned to an exact version -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.js"></script>
+</head>
+<body>
+<button id="open" class="pill" aria-label="Show controls">Controls</button>
+<aside id="panel" aria-label="Controls">
+  <header><h1>Slice</h1><button id="hide" class="pill" aria-label="Hide controls">Hide</button></header>
+  <details open><summary>Contents</summary>
+    <textarea id="txt" aria-label="Text">A</textarea>
+    <div class="seg"><button id="bText" class="on">Text</button><button id="bImg">Image</button></div>
+    <input type="file" id="file" accept="image/*" hidden>
+    <div class="row"><label for="shape">Cell shape</label><select id="shape"><option value="square">Square</option><option value="circle">Circle</option><option value="triangle">Triangle</option><option value="pentagon">Pentagon</option><option value="hexagon">Hexagon</option><option value="octagon">Octagon</option></select></div>
+    <fieldset id="fontOpts"><div class="row"><label for="font">Font</label><select id="font"></select></div></fieldset>
+    <div id="g_c"></div>
+    <fieldset id="fontColor">
+    <div class="sh">Font color</div>
+    <div class="seg"><button id="txS" class="on">Solid</button><button id="txG">Gradient</button></div>
+    <div class="row"><div class="lab"><span id="tALab">Color</span><input type="color" id="tA" value="#000000"></div></div>
+    <div id="txOpts" style="display:none">
+      <div class="row"><div class="lab"><span>Color 2</span><input type="color" id="tB" value="#ff5a36"></div></div>
+      <div class="row"><label for="txType">Type</label><select id="txType"><option value="linear">Linear</option><option value="radial">Radial</option></select></div>
+      <div id="g_t"></div>
+    </div>
+    <p class="hint">Font and font color apply to text only, and are disabled when the content is an image.</p>
+    </fieldset>
+    <div class="sh">Background color</div>
+    <div class="seg"><button id="bgS" class="on">Solid</button><button id="bgG">Gradient</button></div>
+    <div class="row"><div class="lab"><span id="cALab">Color</span><input type="color" id="cA" value="#ffffff"></div></div>
+    <div id="gradOpts" style="display:none">
+      <div class="row"><div class="lab"><span>Color 2</span><input type="color" id="cB" value="#8ab4ff"></div></div>
+      <div class="row"><label for="bgType">Type</label><select id="bgType"><option value="linear">Linear</option><option value="radial">Radial</option></select></div>
+      <div id="g_b"></div>
+    </div>
+  </details>
+  <details open><summary>Grid</summary>
+    <div id="g_g"></div>
+    <div class="sh">Grid lines</div>
+    <div class="seg"><button id="lnOff" class="on">Off</button><button id="lnOn">On</button></div>
+    <div id="lnOpts" style="display:none">
+      <div class="row"><div class="lab"><span>Color</span><input type="color" id="lnC" value="#000000"></div></div>
+      <div id="g_l"></div>
+    </div>
+  </details>
+  <details open><summary>Distortion</summary><div id="g_d"></div></details>
+  <details open><summary>Animation</summary><div id="g_a"></div>
+    <div class="row" id="seedRow"><div class="lab"><span>Seed</span><span><input type="number" id="seed" min="0" max="99999" step="1" aria-label="Seed"> <button id="shuffle" class="pill">Reshuffle</button></span></div></div><p class="hint">Stagger turns the random motion into an outward ripple. Seed fixes the random pattern, Reshuffle picks a new one, and the motion repeats exactly every Loop length. These are available once Random motion is above 0.</p></details>
+  <details open><summary>Interaction</summary>
+    <div class="seg"><button id="ixOff" class="on">Off</button><button id="ixOn">Magnify</button></div>
+    <div id="ixOpts" style="display:none"><div id="g_i"></div></div>
+    <p class="hint">Magnify enlarges the cells near your cursor or finger. Move over the artwork to try it.</p>
+  </details>
+  <details open><summary>Export</summary>
+    <div class="row"><label for="expRes">Resolution</label><select id="expRes"><option value="1920">1080p</option><option value="2560">2K</option><option value="3840">4K</option></select></div>
+    <p class="hint" id="expInfo"></p>
+    <div class="row"><button id="expPng" class="pill">Save PNG</button> <button id="expMp4" class="pill">Save MP4</button></div>
+    <progress id="expProg" max="1" value="0" hidden style="width:100%;margin-top:8px"></progress>
+    <p class="hint" id="expMsg"></p>
+  </details>
+  <button id="reset" class="pill">Reset all</button>
+  <p class="hint">Double-click a label to reset it. Press H to hide the panel.</p>
+</aside>
+<div id="stage"></div>
+<script src="slice.js"></script>
+</body>
+</html>

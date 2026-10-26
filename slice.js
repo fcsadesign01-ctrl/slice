@@ -1,5 +1,5 @@
 // ---- State -------------------------------------------------
-const DEF = {text:'A', useImage:false, shape:'square', size:400, sx:40, sy:40, squeeze:0, comp:0, compX:0, rot:0, cell:80, gap:0, bgMode:'solid', bgA:'#ffffff', bgB:'#8ab4ff', bgType:'linear', bgAngle:45, txMode:'solid', txA:'#000000', txB:'#ff5a36', txType:'linear', txAngle:45, font:'helvetica', lines:false, lineC:'#000000', lineW:1, stagger:0, rm:0, rmSpeed:1, rr:0, loopLen:6, seed:1, ix:false, ixR:200, ixS:100, expOri:'landscape'};
+const DEF = {text:'', useImage:false, shape:'square', size:400, sx:40, sy:40, squeeze:0, comp:0, compX:0, rot:0, cell:80, gap:0, bgMode:'solid', bgA:'#ffffff', bgB:'#8ab4ff', bgType:'linear', bgAngle:45, txMode:'solid', txA:'#000000', txB:'#ff5a36', txType:'linear', txAngle:45, font:'helvetica', lines:false, lineC:'#000000', lineW:1, stagger:0, rm:0, rmSpeed:1, rr:0, loopLen:6, seed:1, ix:false, ixR:200, ixS:100, expOri:'landscape'};
 const FONTS = {
   helvetica:{n:'Helvetica', css:'Helvetica, Arial, sans-serif', b:true},
   inter:{n:'Inter', css:'"Inter", Helvetica, sans-serif', b:true},
@@ -73,7 +73,7 @@ function shapePath(ctx, cx, cy, tl, k) {
 // ---- Glyph (text or image rendered once, reused in every cell) ----
 function buildGlyph(pdo) {
   const useImg = P.useImage && img;
-  const lines = (P.text || 'A').split('\n');
+  const lines = (P.text || '').split('\n');
   const lead = P.size * 1.15, iw = P.size * 0.8, ih = useImg ? iw * img.height / img.width : 0;
   let w, h;
   if (useImg) { w = iw; h = ih; }
@@ -240,7 +240,7 @@ function sync() {
   bgUI(); txUI(); lnUI(); fontUI(); rrUI(); ixUI(); expUI();
 }
 
-$('txt').oninput = e => { P.text = e.target.value || 'A'; dirty = true; redraw(); };
+$('txt').oninput = e => { P.text = e.target.value; dirty = true; redraw(); };
 $('shape').onchange = e => { P.shape = e.target.value; redraw(); };
 $('bText').onclick = () => { P.useImage = false; dirty = true; sync(); redraw(); };
 $('bImg').onclick = () => {

@@ -2,7 +2,7 @@
 
 A p5.js tool that slices a letter, word or image across a grid of cells (square, circle, triangle, pentagon, hexagon or octagon), then distorts, animates and exports it.
 
-**Features:** text or image content, six cell shapes with interlocking layouts, fonts, solid or gradient font and background colors, grid lines, grid shift, squeeze, compression X/Y, rotation, seeded random motion with stagger ripple and random rotation, pointer magnify, PNG export and seamless-loop MP4 export (1080p, 2K, 4K).
+**Features:** text or image content, six cell shapes with interlocking layouts, fonts, solid or gradient font and background colors, grid lines, grid shift, squeeze, compression X/Y, rotation, seeded random motion with stagger ripple and random rotation, pointer magnify, PNG export and seamless-loop MP4 export (1080p, 2K, 4K, landscape or portrait).
 
 ## Run it
 

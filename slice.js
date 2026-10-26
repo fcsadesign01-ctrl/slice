@@ -1,5 +1,5 @@
 // ---- State -------------------------------------------------
-const DEF = {text:'A', useImage:false, shape:'square', size:400, sx:40, sy:40, squeeze:0, comp:0, compX:0, rot:0, cell:80, gap:0, bgMode:'solid', bgA:'#ffffff', bgB:'#8ab4ff', bgType:'linear', bgAngle:45, txMode:'solid', txA:'#000000', txB:'#ff5a36', txType:'linear', txAngle:45, font:'helvetica', lines:false, lineC:'#000000', lineW:1, stagger:0, rm:0, rmSpeed:1, rr:0, loopLen:6, seed:1, ix:false, ixR:200, ixS:100};
+const DEF = {text:'A', useImage:false, shape:'square', size:400, sx:40, sy:40, squeeze:0, comp:0, compX:0, rot:0, cell:80, gap:0, bgMode:'solid', bgA:'#ffffff', bgB:'#8ab4ff', bgType:'linear', bgAngle:45, txMode:'solid', txA:'#000000', txB:'#ff5a36', txType:'linear', txAngle:45, font:'helvetica', lines:false, lineC:'#000000', lineW:1, stagger:0, rm:0, rmSpeed:1, rr:0, loopLen:6, seed:1, ix:false, ixR:200, ixS:100, expOri:'landscape'};
 const FONTS = {
   helvetica:{n:'Helvetica', css:'Helvetica, Arial, sans-serif', b:true},
   inter:{n:'Inter', css:'"Inter", Helvetica, sans-serif', b:true},
@@ -161,8 +161,7 @@ function gradient(ctx, cx, cy, w, h, type, ang, c1, c2) {
 }
 
 // ---- Background: solid colour or gradient (angle follows CSS: 0 = up, 90 = right) ----
-function paintBg(ctx = drawingContext) {
-  const w = width, h = height;
+function paintBg(ctx = drawingContext, w = width, h = height) {
   if (P.bgMode === 'solid') ctx.fillStyle = P.bgA;
   else if (P.bgType === 'radial') {
     const g = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.hypot(w, h) / 2);
@@ -183,15 +182,15 @@ function draw() {
   renderView(drawingContext);
 }
 // Draws the whole artwork into any 2D context, in view coordinates (exports scale the context).
-function renderView(ctx) {
-  paintBg(ctx);
+function renderView(ctx, vw = width, vh = height) {
+  paintBg(ctx, vw, vh);
   if (dirty) { buildGlyph(expPD); dirty = false; }
   const p = P.cell + P.gap, k = P.cell / p;
-  const T = tiles(P.shape, p, width, height);
+  const T = tiles(P.shape, p, vw, vh);
   const mags = new Map(); let TT = T; // magnified cells are drawn last so they sit on top
   if (P.ix && ptr.amt > 0) { T.forEach(tl => mags.set(tl, magOf(tl))); TT = [...T].sort((a, b) => mags.get(a) - mags.get(b)); }
   for (const tl of TT) {
-    const cx = width / 2 + tl.x, cy = height / 2 + tl.y;
+    const cx = vw / 2 + tl.x, cy = vh / 2 + tl.y;
     const t = cellXform(tl.x / p, tl.y / p, P);
     if (P.rm > 0) { const j = jitter(tl, p); t.ox += j[0]; t.oy += j[1]; if (P.rr > 0) t.ang += jitterRot(tl, p); } // position in pitch units, so offsets stay continuous across layouts
     ctx.save();
@@ -203,7 +202,7 @@ function renderView(ctx) {
   }
   if (P.lines) { // grid lines drawn on top, after every tile
     ctx.save(); ctx.lineWidth = P.lineW; ctx.strokeStyle = P.lineC; ctx.lineJoin = 'round';
-    for (const tl of T) { shapePath(ctx, width / 2 + tl.x, height / 2 + tl.y, tl, k * (mags.get(tl) || 1)); ctx.stroke(); }
+    for (const tl of T) { shapePath(ctx, vw / 2 + tl.x, vh / 2 + tl.y, tl, k * (mags.get(tl) || 1)); ctx.stroke(); }
     ctx.restore();
   }
 }
@@ -334,21 +333,25 @@ stg.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') ptrOff()
 // ---- Export: PNG still, or MP4 of one seamless loop, at 1080p / 2K / 4K ----
 const FPS = 30;
 const say = t => { $('expMsg').textContent = t; };
-function expDims() { // keeps the view's aspect ratio; the resolution sets the long edge
-  const vw = typeof width === 'number' ? width : innerWidth, vh = typeof height === 'number' ? height : innerHeight;
-  const long = +$('expRes').value, a = vw / vh;
-  const w = a >= 1 ? long : Math.round(long * a), h = a >= 1 ? Math.round(long / a) : long;
-  return [w - (w % 2), h - (h % 2)]; // H.264 needs even sizes
+function expDims() { // [w, h, vw, vh]: output size, and the view-space rectangle it shows
+  const W = typeof width === 'number' ? width : innerWidth, H = typeof height === 'number' ? height : innerHeight;
+  const long = +$('expRes').value, land = P.expOri !== 'portrait', a = land ? 16 / 9 : 9 / 16;
+  const w = land ? long : Math.round(long * 9 / 16), h = land ? Math.round(long * 9 / 16) : long;
+  const vw = Math.max(W, H * a); // smallest frame of this shape that still contains the whole current view
+  return [w - (w % 2), h - (h % 2), vw, vw / a]; // H.264 needs even sizes
 }
 function expUI() {
   const [w, h] = expDims(), motion = P.rm > 0 && P.rmSpeed > 0;
-  $('expInfo').textContent = `${w} × ${h} px, same framing as your view.` + (motion ? ` MP4 is one ${P.loopLen}s loop.` : ' MP4 needs Random motion and Motion speed above 0.');
+  $('expInfo').textContent = `${w} × ${h} px ${P.expOri === 'portrait' ? 'portrait' : 'landscape'}. Includes your whole view, with extra grid to fill the frame.` + (motion ? ` MP4 is one ${P.loopLen}s loop.` : ' MP4 needs Random motion and Motion speed above 0.');
+  $('oriL').classList.toggle('on', P.expOri !== 'portrait'); $('oriP').classList.toggle('on', P.expOri === 'portrait');
   $('expMp4').disabled = !exporting && !motion;
   $('expPng').disabled = exporting;
 }
 $('expRes').onchange = expUI;
+$('oriL').onclick = () => { P.expOri = 'landscape'; expUI(); };
+$('oriP').onclick = () => { P.expOri = 'portrait'; expUI(); };
 const mkCanvas = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
-function frameInto(c, ctx) { ctx.setTransform(c.width / width, 0, 0, c.height / height, 0, 0); renderView(ctx); }
+function frameInto(c, ctx, vw = width, vh = height) { ctx.setTransform(c.width / vw, 0, 0, c.height / vh, 0, 0); renderView(ctx, vw, vh); }
 async function saveFile(name, data) {
   const dl = (window.claude && window.claude.use) ? await claude.use('downloads') : null;
   if (dl) { // inside Claude: uses its save prompt
@@ -369,11 +372,11 @@ function endExport(keepMt, keepAmt) {
 }
 $('expPng').onclick = async () => {
   if (exporting) return;
-  const [w, h] = expDims(), keepMt = mt, keepAmt = ptr.amt;
+  const [w, h, vw, vh] = expDims(), keepMt = mt, keepAmt = ptr.amt;
   exporting = true; noLoop(); ptr.amt = 0; say('Rendering…'); expUI();
   try {
-    expPD = w / width; dirty = true;
-    const c = mkCanvas(w, h); frameInto(c, c.getContext('2d'));
+    expPD = w / vw; dirty = true;
+    const c = mkCanvas(w, h); frameInto(c, c.getContext('2d'), vw, vh);
     const blob = await new Promise(r => c.toBlob(r, 'image/png'));
     if (!blob) throw new Error('could not create the image');
     await saveFile('slice.png', blob);
@@ -384,7 +387,7 @@ let expCancel = false;
 $('expMp4').onclick = async () => {
   if (exporting) { expCancel = true; return; }
   if (typeof VideoEncoder === 'undefined' || !window.Mp4Muxer) { say('MP4 export needs a browser with WebCodecs (recent Chrome, Edge or Safari).'); return; }
-  const [w, h] = expDims(), N = Math.round(P.loopLen * FPS);
+  const [w, h, vw, vh] = expDims(), N = Math.round(P.loopLen * FPS);
   let cfg = null;
   for (const codec of ['avc1.640033', 'avc1.64002A', 'avc1.640028', 'avc1.4d0028']) {
     try { const r = await VideoEncoder.isConfigSupported({codec, width: w, height: h, bitrate: Math.round(w * h * FPS * 0.1), framerate: FPS}); if (r.supported) { cfg = r.config; break; } } catch { /* try the next codec */ }
@@ -398,11 +401,11 @@ $('expMp4').onclick = async () => {
     const muxer = new Mp4Muxer.Muxer({target: new Mp4Muxer.ArrayBufferTarget(), video: {codec: 'avc', width: w, height: h}, fastStart: 'in-memory'});
     enc = new VideoEncoder({output: (ch, meta) => muxer.addVideoChunk(ch, meta), error: e => { err = e; }});
     enc.configure(cfg);
-    expPD = w / width; dirty = true;
+    expPD = w / vw; dirty = true;
     const c = mkCanvas(w, h), ctx = c.getContext('2d');
     for (let i = 0; i < N && !expCancel && !err; i++) {
       mt = i / FPS; // frame i of the loop; frame N would equal frame 0
-      frameInto(c, ctx);
+      frameInto(c, ctx, vw, vh);
       const vf = new VideoFrame(c, {timestamp: Math.round(i * 1e6 / FPS), duration: Math.round(1e6 / FPS)});
       enc.encode(vf, {keyFrame: i % FPS === 0}); vf.close();
       while (enc.encodeQueueSize > 6) await new Promise(r => setTimeout(r, 4));
